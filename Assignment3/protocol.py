@@ -45,23 +45,27 @@ class Protocol:
     # Encrypting messages
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def EncryptAndProtectMessage(self, plain_text):
-        cipher = AES.new(self._key, AES.MODE_EAX)
-        cipher_text, tag = cipher.encrypt_and_digest(plain_text.encode('utf-8'))
-        nonce = cipher.nonce
+        try:
+            cipher = AES.new(self._key, AES.MODE_EAX)
+            cipher_text, tag = cipher.encrypt_and_digest(plain_text.encode('utf-8'))
+            nonce = cipher.nonce
 
-        result = {"cipher_text": b64encode(cipher_text).decode('utf-8'), "tag": b64encode(tag).decode('utf-8'), "nonce": b64encode(nonce).decode('utf-8')}
-        return json.dumps(result)
+            result = {'cipher_text': b64encode(cipher_text).decode('utf-8'), 'tag': b64encode(tag).decode('utf-8'), 'nonce': b64encode(nonce).decode('utf-8')}
+            return json.dumps(result)
+        except:
+            return "Error: INTEGRITY VERIFICATION OR AUTHENTICATION FAILED"   
 
 
     # Decrypting and verifying messages
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def DecryptAndVerifyMessage(self, cipher_text):     
         try:
-            encrypted_message_b64 = json.loads(cipher_text)
-            json_keys = ['ciper_text', 'tag', 'nonce']
+            encrypted_message_b64 = json.loads(cipher_text.decode('utf-8'))
+            json_keys = ['cipher_text', 'tag', 'nonce']
             encrypted_message = {key:b64decode(encrypted_message_b64[key]) for key in json_keys}
+
             cipher = AES.new(self._key, AES.MODE_EAX, nonce=encrypted_message['nonce'])
             plain_text = cipher.decrypt_and_verify(encrypted_message['cipher_text'], encrypted_message['tag'])
-            return plain_text
-        except ValueError:
+            return plain_text    
+        except ValueError:     
             return "Error: INTEGRITY VERIFICATION OR AUTHENTICATION FAILED"
