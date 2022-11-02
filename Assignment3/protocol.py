@@ -1,3 +1,9 @@
+from typing import Set
+from Crypto.Cipher import AES
+from hashlib import sha256
+from base64 import b64encode, b64decode
+import json
+
 class Protocol:
     # Initializer (Called from app.py)
     # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
@@ -28,21 +34,34 @@ class Protocol:
     # Setting the key for the current session
     # TODO: MODIFY AS YOU SEEM FIT
     def SetSessionKey(self, key):
-        self._key = key
-        pass
+        self._key = sha256(key.encode('utf-8')).digest()
+        return
 
+    # Setting shared secret on TCP connection
+    def setSharedSecret(self, key):
+        self.SetSessionKey(key)
+        return
 
     # Encrypting messages
-    # TODO: IMPLEMENT ENCRYPTION WITH THE SESSION KEY (ALSO INCLUDE ANY NECESSARY INFO IN THE ENCRYPTED MESSAGE FOR INTEGRITY PROTECTION)
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
     def EncryptAndProtectMessage(self, plain_text):
-        cipher_text = plain_text
-        return cipher_text
+        cipher = AES.new(self._key, AES.MODE_EAX)
+        cipher_text, tag = cipher.encrypt_and_digest(plain_text.encode('utf-8'))
+        nonce = cipher.nonce
+
+        result = {"cipher_text": b64encode(cipher_text).decode('utf-8'), "tag": b64encode(tag).decode('utf-8'), "nonce": b64encode(nonce).decode('utf-8')}
+        return json.dumps(result)
 
 
     # Decrypting and verifying messages
-    # TODO: IMPLEMENT DECRYPTION AND INTEGRITY CHECK WITH THE SESSION KEY
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
-    def DecryptAndVerifyMessage(self, cipher_text):
-        plain_text = cipher_text
-        return plain_text
+    def DecryptAndVerifyMessage(self, cipher_text):     
+        try:
+            encrypted_message_b64 = json.loads(cipher_text)
+            json_keys = ['ciper_text', 'tag', 'nonce']
+            encrypted_message = {key:b64decode(encrypted_message_b64[key]) for key in json_keys}
+            cipher = AES.new(self._key, AES.MODE_EAX, nonce=encrypted_message['nonce'])
+            plain_text = cipher.decrypt_and_verify(encrypted_message['cipher_text'], encrypted_message['tag'])
+            return plain_text
+        except ValueError:
+            return "Error: INTEGRITY VERIFICATION OR AUTHENTICATION FAILED"

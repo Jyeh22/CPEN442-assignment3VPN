@@ -96,7 +96,7 @@ class Assignment3VPN:
     def _CreateTCPConnection(self):
         if not self._ValidateConnectionInputs():
             return False
-        
+        self.prtcl.SetSessionKey(self.sharedSecret.get())   #can be removed, was using for testing
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
