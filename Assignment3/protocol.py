@@ -1,4 +1,5 @@
 import random
+import sys
 from typing import Set
 from Crypto.Cipher import AES
 from hashlib import sha256
@@ -20,7 +21,7 @@ class Protocol:
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
-        self._private_key = (self.g**random.random()) % self.p
+        self._private_key = (self.g**random.randint(1, 9999)) % self.p
         timestamp = datetime.now().timestamp()
 
         message = {'key': self._private_key, 'timestamp': timestamp}
