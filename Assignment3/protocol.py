@@ -59,13 +59,7 @@ class Protocol:
 
     def validTimestamp(self, timestamp):
         min_time = timestamp = datetime.now().timestamp() - 120
-        max_time = timestamp = datetime.now().timestamp() + 120
-        print("min_time: " + str(min_time))
-        print("max_time:" + str(max_time))
-        print("max_time:" + str(max_time + 300))
-        print("max_time:" + str(max_time + 6000))
-        print("max_time:" + str(max_time + 12000))
-        print(timestamp)
+        max_time = timestamp = datetime.now().timestamp()
         return (timestamp >= min_time ) and (timestamp <= max_time )
     
     # Setting the key for the current session
@@ -74,6 +68,10 @@ class Protocol:
         self._key = sha256(key.encode('utf-8')).digest()    # ensures key matches 256 bits needed for AES
         return
 
+    # Setting shared secret on TCP connection
+    def setSharedSecret(self, key):
+        self.SetSessionKey(key)
+        return
    
     # Encrypting messages
     # TODO: IMPLEMENT ENCRYPTION WITH THE SESSION KEY (ALSO INCLUDE ANY NECESSARY INFO IN THE ENCRYPTED MESSAGE FOR INTEGRITY PROTECTION)
