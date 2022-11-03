@@ -2,33 +2,48 @@ from typing import Set
 from Crypto.Cipher import AES
 from hashlib import sha256
 from base64 import b64encode, b64decode
+from cryptography.hazmat.primitives.asymmetric import dh
 import json
+import time
 
 class Protocol:
     # Initializer (Called from app.py)
     # TODO: MODIFY ARGUMENTS AND LOGIC AS YOU SEEM FIT
     def __init__(self):
         self._key = None
+        self.DHval = None
         pass
 
 
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
-        return ""
+        parameters = dh.generate_parameters(generator=2, key_size=256)
+        self.DHval = parameters.generate_private_key()
+        return json.dumps({'otherkey': self.DHval.public_key(), 'parameters':parameters})
 
 
     # Checking if a received message is part of your protocol (called from app.py)
     # TODO: IMPLMENET THE LOGIC
     def IsMessagePartOfProtocol(self, message):
-        return False
+        return True
 
 
     # Processing protocol message
     # TODO: IMPLMENET THE LOGIC (CALL SetSessionKey ONCE YOU HAVE THE KEY ESTABLISHED)
     # THROW EXCEPTION IF AUTHENTICATION FAILS
     def ProcessReceivedProtocolMessage(self, message):
-        pass
+        mess = json.loads(message)
+        retval = None
+        if self.DHval != None :
+            self.SetSessionKey(self, self.DHval.exchange(mess['otherkey']))
+        else:
+            self.DHval = mess['parameters'].generate_private_key()
+            self.SetSessionKey(self, self.DHval.exchange(mess['otherkey']))
+            retval = json.dumps({'otherkey':self.DHval.public_key()})
+            
+        self.DHval = None
+        return retval
 
 
     # Setting the key for the current session
