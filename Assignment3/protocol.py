@@ -3,6 +3,8 @@ from hashlib import sha256
 from base64 import b64encode, b64decode
 from datetime import datetime
 import json
+from cryptography.hazmat.primitives.asymmetric import dh
+import random
 
 class Protocol:
     # Initializer (Called from app.py)
@@ -16,10 +18,14 @@ class Protocol:
     # Creating the initial message of your protocol (to be send to the other party to bootstrap the protocol)
     # TODO: IMPLEMENT THE LOGIC (MODIFY THE INPUT ARGUMENTS AS YOU SEEM FIT)
     def GetProtocolInitiationMessage(self):
-        self._private_key = 5
+        parameters = dh.generate_parameters(generator=2, key_size=512)
+        self._private_key = random.SystemRandom().randint(2, 64)
+        g = parameters.parameter_numbers()._g
+        p = parameters.parameter_numbers()._p
+        public_key = pow(g, self._private_key) % p
         timestamp = datetime.now().timestamp()
 
-        message = {'key': self._private_key, 'timestamp': timestamp}
+        message = {'public_key': public_key, 'g': g, 'p': p, 'timestamp': timestamp}
         message_encrypted = self.EncryptAndProtectMessage(json.dumps(message))
         message_encrypted['isProtocol'] = True
         return message_encrypted
@@ -42,13 +48,20 @@ class Protocol:
             if (not self.validTimestamp(message_decrypted['timestamp'])):
                 raise Exception("Error: Invalid timestamp")
             if (self._private_key == None):     # receiving 1st response
-                response = self.GetProtocolInitiationMessage()
-                key = self._private_key * message_decrypted['key']
+                self._private_key = random.SystemRandom().randint(2, 64)
+                public_key = pow(message_decrypted['g'], self._private_key) % message_decrypted['p']
+                timestamp = datetime.now().timestamp()
+
+                message = {'public_key': public_key, 'timestamp': timestamp}
+                response = self.EncryptAndProtectMessage(json.dumps(message))
+                response['isProtocol'] = True
+
+                key = pow(message_decrypted['public_key'], self._private_key)
                 self.SetSessionKey(str(key))
                 self._private_key = None
                 return response
             else:                               # receiving 2nd response
-                key = self._private_key * message_decrypted['key']
+                key = pow(message_decrypted['public_key'], self._private_key)
                 self.SetSessionKey(str(key))
                 self._private_key = None
                 return None
@@ -64,7 +77,6 @@ class Protocol:
     
     # Setting the key for the current session
     def SetSessionKey(self, key):
-        print(key)
         self._key = sha256(key.encode('utf-8')).digest()    # ensures key matches 256 bits needed for AES
         return
 
