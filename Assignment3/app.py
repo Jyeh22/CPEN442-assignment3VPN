@@ -6,6 +6,7 @@ import pygubu
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
+import json
 
 # local import from "protocol.py"
 from protocol import Protocol
@@ -142,6 +143,7 @@ class Assignment3VPN:
             try:
                 # Receiving all the data
                 cipher_text = self.conn.recv(4096)
+                cipher_text = json.loads(cipher_text.decode('utf-8'))
 
                 # Check if socket is still open
                 if cipher_text == None or len(cipher_text) == 0:
@@ -154,8 +156,12 @@ class Assignment3VPN:
                     # Disabling the button to prevent repeated clicks
                     self.secureButton["state"] = "disabled"
                     # Processing the protocol message
-                    self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
-
+                    protocol_message = self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
+                    # If 2nd message send response
+                    if (protocol_message == None):
+                        self.secureButton["state"] = "disabled"
+                    else:
+                        self.conn.send(json.dumps(protocol_message).encode())
                 # Otherwise, decrypting and showing the messaage
                 else:
                     plain_text = self.prtcl.DecryptAndVerifyMessage(cipher_text)
@@ -170,7 +176,7 @@ class Assignment3VPN:
     def _SendMessage(self, message):
         plain_text = message
         cipher_text = self.prtcl.EncryptAndProtectMessage(plain_text)
-        self.conn.send(cipher_text.encode())
+        self.conn.send(json.dumps(cipher_text).encode())
             
 
     # Secure connection with mutual authentication and key establishment
@@ -180,7 +186,7 @@ class Assignment3VPN:
 
         # TODO: THIS IS WHERE YOU SHOULD IMPLEMENT THE START OF YOUR MUTUAL AUTHENTICATION AND KEY ESTABLISHMENT PROTOCOL, MODIFY AS YOU SEEM FIT
         init_message = self.prtcl.GetProtocolInitiationMessage()
-        self._SendMessage(init_message)
+        self.conn.send(json.dumps(init_message).encode())
 
 
     # Called when SendMessage button is clicked
