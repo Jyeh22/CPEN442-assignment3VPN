@@ -62,6 +62,9 @@ class Protocol:
         max_time = timestamp = datetime.now().timestamp() + 120
         print("min_time: " + str(min_time))
         print("max_time:" + str(max_time))
+        print("max_time:" + str(max_time + 300))
+        print("max_time:" + str(max_time + 6000))
+        print("max_time:" + str(max_time + 12000))
         print(timestamp)
         return (timestamp >= min_time ) and (timestamp <= max_time )
     
@@ -71,7 +74,7 @@ class Protocol:
         self._key = sha256(key.encode('utf-8')).digest()    # ensures key matches 256 bits needed for AES
         return
 
-
+   
     # Encrypting messages
     # TODO: IMPLEMENT ENCRYPTION WITH THE SESSION KEY (ALSO INCLUDE ANY NECESSARY INFO IN THE ENCRYPTED MESSAGE FOR INTEGRITY PROTECTION)
     # RETURN AN ERROR MESSAGE IF INTEGRITY VERITIFCATION OR AUTHENTICATION FAILS
