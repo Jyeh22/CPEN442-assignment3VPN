@@ -158,9 +158,7 @@ class Assignment3VPN:
                     # Processing the protocol message
                     protocol_message = self.prtcl.ProcessReceivedProtocolMessage(cipher_text)
                     # If 2nd message send response
-                    if (protocol_message == None):
-                        self.secureButton["state"] = "disabled"
-                    else:
+                    if (protocol_message != None):
                         self.conn.send(json.dumps(protocol_message).encode())
                 # Otherwise, decrypting and showing the messaage
                 else:
